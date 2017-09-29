@@ -1,0 +1,26 @@
+Author: Russell Pierce [aut, cre]
+Maintainer: Zap Zapler <contact@zapier.com>
+Package: parquetr
+Type: Package
+Description: This package makes reading and writing parquet files from R easy.
+Title: Easy methods for reading/writing Parquet files on S3
+Version: 0.0.1.0
+Depends: 
+Imports:
+    dplyr,
+    glue,
+    magrittr,
+    sparklyr (>= 0.7.0-9034),
+    purrr,
+    uuid,
+    R6,
+    readr,
+    rlang,
+    zapieR
+Suggests:
+    testthat,
+    lubridate
+Remotes:
+    rstudio/sparklyr
+License: GPL-2
+RoxygenNote: 6.0.1.9000
