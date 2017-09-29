@@ -1,0 +1,126 @@
+#' R6 Object to wrap Spark connection
+#'
+#' @export
+#' @importFrom R6 R6Class
+#' @importFrom glue glue
+#' @importFrom sparklyr spark_install_find spark_config spark_write_parquet spark_read_parquet spark_connect spark_read_csv
+#' @importFrom magrittr "%>%"
+#' @importFrom dplyr collect first
+#' @importFrom purrr map
+#' @importFrom uuid UUIDgenerate
+#' @importFrom readr write_csv
+#' @importFrom rlang quo_text
+#' @importFrom zapieR s3_accessibility_layer
+#'
+#' @examples \dontrun{
+#' temp_table <- uuid::UUIDgenerate()
+#' local_spark <- sparkConnection$new()
+#' local_spark$write_parquet(iris, temp_table)
+#' local_spark$read_parquet(temp_table)
+#' local_spark$delete_parquet(temp_table)
+#' }
+parquetr <- R6Class(
+  "parquetr",
+  public = list(
+    initialize = function(bucket) {
+      Sys.setenv(SPARK_HOME = sparklyr:::spark_install_find()$sparkVersionDir)
+      config <- sparklyr::spark_config()
+      config$`sparklyr.shell.driver-memory` <- "4G"
+      config$`sparklyr.shell.executor-memory` <- "4G"
+      config$`spark.yarn.executor.memoryOverhead` <- "1G"
+      config[["sparklyr.defaultPackages"]] <- "org.apache.hadoop:hadoop-aws:2.7.3"
+      private$spark_connection <- sparklyr::spark_connect(master = "local", config = config)
+      private$bucket <- generic_connection(
+        connection_name = UUIDgenerate(),
+        test_connection_fun = test_connection_s3,
+        build_connection_fun =
+          function() s3_accessibility_layer$new(
+            bucket = bucket()$bucket,
+            key_prefix = glue("{bucket()$key_prefix}spark-storage/")
+          )
+      )()
+    },
+    write_parquet = function(df, location, mode = 'overwrite', ...) {
+      # current issue with columns that have newlines in presence of date column
+      # https://github.com/rstudio/sparklyr/issues/1020
+      character_columns <- which(lapply(df, class) == "character")
+      df[, character_columns] <- lapply(df[, character_columns], function(x) {gsub("\n", "", x)})
+      # Date doesn't serialize correctly, other timestamp bits seem affected as well: https://github.com/rstudio/sparklyr/issues/941
+      # datetime_columns <- which(lapply(df, function(x) {first(class(x))}) %in% c("Date", "POSIXct", "POSIXlt"))
+      # df[, datetime_columns] <- lapply(df[, character_columns], function(x) {as.character(x)})
+      temp_loc <- gsub("-", "", UUIDgenerate())
+      self$write_csv(df, temp_loc)
+      types <- identify_spark_types(df)
+      names(types) <- names(df)
+      df_spark <- spark_read_csv(sc = self$sc, name = temp_loc, path = self$s3a_url(paste0("csv/", temp_loc)), columns = types, infer_schema = FALSE)
+      self$delete_csv(temp_loc)
+      spark_write_parquet(df_spark, self$s3a_url(location), mode = mode, ...)
+    },
+    write_parquet_partition = function(df, location, partition) {
+      partition <- enquo(partition)
+      partition_char <- quo_text(partition)
+      unique_entries_for_partition <- df %>%
+        select(!!partition) %>%
+        pull(parition) %>%
+        unique
+      spark_write_parquet(df_spark, self$s3a_url(self$partition_location(location, partition_char, unique_entries_for_partition)), mode = "overwrite")
+    },
+    read_parquet = function(name, ...) {
+      spark_read_parquet(self$sc, private$spark_name(name), self$s3a_url(name), ...) %>% collect(n = Inf)
+    },
+    read_csv = function(name, columns = NULL, ...) {
+      name <- as.character(glue("csv/{name}"))
+      spark_read_csv(sc = self$sc, name = private$spark_name(name), self$s3a_url(name), columns = columns, ...) %>% collect(n = Inf)
+    },
+    delete_parquet = function(name) {
+      private$bucket$ls(name)$filename %>%
+        map(~ private$bucket$rm(.x))
+    },
+    write_csv = function(d, location) {
+      location <- glue("csv/{location}")
+      temp_file <- tempfile()
+      write_csv(x = d, path = temp_file)
+      private$bucket$set_file(location, temp_file)
+    },
+    delete_csv = function(location) {
+      location <- glue("csv/{location}")
+      private$bucket$rm(location)
+    },
+    s3a_url = function(location) {
+      private$bucket$s3a_url(location)
+    },
+    s3_url = function(location) {
+      private$bucket$s3_url(location)
+    },
+    partition_location = function(location, partition, value) {
+      stopifnot(is.atomic(location))
+      stopifnot(is.atomic(partition))
+      stopifnot(is.atomic(value))
+      glue("{location}/{partition}={value}")
+    },
+    # Object finalizer
+    finalize = function() {
+      try(spark_disconnect(private$spark_connection), silent = TRUE)
+    }
+  ),
+  active = list(
+    sc = function() {
+      private$spark_connection
+    }
+  ),
+  private = list(
+    spark_connection = NULL,
+    bucket = NULL,
+    spark_name = function(name) {
+      name %>%
+        # Spark 2.1 doesn't like hyphens in the object names
+        # Spark 2.1 doesn't like forward slashes in the object names
+        # ... it is kind of like R in that wake
+        make.names() %>%
+        gsub(".", "_", .)
+    },
+    csv_name = function(location) {
+      paste0("csv/", location)
+    }
+  )
+)
