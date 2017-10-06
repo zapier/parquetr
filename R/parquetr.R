@@ -19,7 +19,7 @@
 #' local_spark$read_parquet(temp_table)
 #' local_spark$delete_parquet(temp_table)
 #' }
-parquetr <- R6Class(
+Parquetr <- R6Class(
   "parquetr",
   public = list(
     initialize = function(bucket) {

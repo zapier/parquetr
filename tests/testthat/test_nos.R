@@ -10,11 +10,11 @@ test_that("UUID can be generated; a failure of this test indicates someone forgo
 temp_table <- uuid::UUIDgenerate()
 
 test_that("Spark connection can be generated", {
-  local_spark <- parquetr$new(zapieR::data_science_storage_s3)
+  local_spark <- Parquetr$new(zapieR::data_science_storage_s3)
   expect_true(is.environment(local_spark))
 })
 
-local_spark <- parquetr$new(zapieR::data_science_storage_s3)
+local_spark <- Parquetr$new(zapieR::data_science_storage_s3)
 
 demo_loc <- paste0("deleteme", gsub("-", "", uuid::UUIDgenerate()))
 d1 <- data.frame(id = 1:3, date = lubridate::today()-lubridate::days(1), value = rnorm(3))
@@ -64,8 +64,6 @@ test_that("csv handling", {
   local_spark$write_csv(d = cars, location = test_location)
   expect_equivalent(cars, local_spark$read_csv(test_location))
 })
-
-
 
 # Speed testing at various sizes always yielded an advantage to copy_to
 # However, copy_to has some serialization bugs for date/timestamps.
