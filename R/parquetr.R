@@ -20,7 +20,7 @@
 #' local_spark$delete_parquet(temp_table)
 #' }
 Parquetr <- R6Class(
-  "parquetr",
+  "Parquetr",
   public = list(
     initialize = function(bucket) {
       Sys.setenv(SPARK_HOME = sparklyr:::spark_install_find()$sparkVersionDir)
