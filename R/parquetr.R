@@ -9,7 +9,7 @@
 #' @importFrom purrr map
 #' @importFrom uuid UUIDgenerate
 #' @importFrom readr write_csv
-#' @importFrom rlang quo_text
+#' @importFrom rlang quo_text sym "!!"
 #' @importFrom zapieR s3_accessibility_layer
 #'
 #' @examples \dontrun{
@@ -58,13 +58,11 @@ Parquetr <- R6Class(
       spark_write_parquet(df_spark, self$s3a_url(location), mode = mode, ...)
     },
     write_parquet_partition = function(df, location, partition) {
-      partition <- enquo(partition)
-      partition_char <- quo_text(partition)
       unique_entries_for_partition <- df %>%
         select(!!partition) %>%
         pull(!!partition) %>%
         unique
-      self$write_parquet(df, self$partition_location(location, partition_char, unique_entries_for_partition), mode = "overwrite")
+      self$write_parquet(df, self$partition_location(location, partition, unique_entries_for_partition), mode = "overwrite")
     },
     read_parquet = function(name, ...) {
       spark_read_parquet(self$sc, private$spark_name(name), self$s3a_url(name), ...) %>% collect(n = Inf)
