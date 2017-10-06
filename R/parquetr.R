@@ -41,6 +41,7 @@ Parquetr <- R6Class(
       )()
     },
     write_parquet = function(df, location, mode = 'overwrite', ...) {
+      # @param location character ; just the name not the s3 addy
       # current issue with columns that have newlines in presence of date column
       # https://github.com/rstudio/sparklyr/issues/1020
       character_columns <- which(lapply(df, class) == "character")
@@ -61,9 +62,9 @@ Parquetr <- R6Class(
       partition_char <- quo_text(partition)
       unique_entries_for_partition <- df %>%
         select(!!partition) %>%
-        pull(parition) %>%
+        pull(!!partition) %>%
         unique
-      spark_write_parquet(df_spark, self$s3a_url(self$partition_location(location, partition_char, unique_entries_for_partition)), mode = "overwrite")
+      self$write_parquet(df, self$partition_location(location, partition_char, unique_entries_for_partition), mode = "overwrite")
     },
     read_parquet = function(name, ...) {
       spark_read_parquet(self$sc, private$spark_name(name), self$s3a_url(name), ...) %>% collect(n = Inf)
@@ -93,6 +94,7 @@ Parquetr <- R6Class(
       private$bucket$s3_url(location)
     },
     partition_location = function(location, partition, value) {
+      # Build a text string to specify a partition location
       stopifnot(is.atomic(location))
       stopifnot(is.atomic(partition))
       stopifnot(is.atomic(value))
