@@ -56,7 +56,7 @@ Parquetr <- R6Class(
       df_spark <- spark_read_csv(sc = self$sc, name = temp_loc, path = self$s3a_url(paste0("csv/", temp_loc)), columns = types, infer_schema = FALSE)
       self$delete_csv(temp_loc)
       spark_write_parquet(df_spark, self$s3a_url(location), mode = mode, ...)
-      sparklyr::tbl_uncache(sc, temp_loc)
+      sparklyr::tbl_uncache(self$sc, temp_loc)
     },
     write_parquet_partition = function(df, location, partition) {
       unique_entries_for_partition <- df %>%
