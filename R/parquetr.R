@@ -68,8 +68,9 @@ Parquetr <- R6Class(
       spark_read_parquet(self$sc, private$spark_name(name), self$s3a_url(name), ...) %>% collect(n = Inf)
     },
     read_csv = function(name, columns = NULL, ...) {
+      #TODO: A read that immediately follows a write could set infer_schema to false to speed reading back into Spark
       name <- as.character(glue("csv/{name}"))
-      spark_read_csv(sc = self$sc, name = private$spark_name(name), self$s3a_url(name), columns = columns, ...) %>% collect(n = Inf)
+      spark_read_csv(sc = self$sc, name = private$spark_name(name), self$s3a_url(name), null_value = "", columns = columns, ...) %>% collect(n = Inf)
     },
     delete_parquet = function(name) {
       private$bucket$ls(name)$filename %>%
@@ -78,7 +79,7 @@ Parquetr <- R6Class(
     write_csv = function(d, location) {
       location <- glue("csv/{location}")
       temp_file <- tempfile()
-      write_csv(x = d, path = temp_file)
+      write_csv(x = d, path = temp_file, na = "")
       private$bucket$set_file(location, temp_file)
     },
     delete_csv = function(location) {
