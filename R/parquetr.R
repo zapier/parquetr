@@ -82,6 +82,7 @@ Parquetr <- R6Class(
       temp_file <- tempfile()
       write_csv(x = d, path = temp_file, na = "")
       private$bucket$set_file(location, temp_file)
+      unlink(temp_file)
     },
     delete_csv = function(location) {
       location <- glue("csv/{location}")
