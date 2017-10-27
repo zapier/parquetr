@@ -9,6 +9,9 @@ identify_spark_types(.data)
 \arguments{
 \item{.data}{\code{data.frame}}
 }
+\value{
+character vector
+}
 \description{
 Identify Corresponding Spark Types
 }

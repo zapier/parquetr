@@ -2,7 +2,7 @@
 #'
 #' @param .data \code{data.frame}
 #'
-#' @return
+#' @return character vector
 #' @export
 #'
 #' @importFrom glue glue
