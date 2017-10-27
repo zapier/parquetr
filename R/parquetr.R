@@ -11,6 +11,7 @@
 #' @importFrom readr write_csv
 #' @importFrom rlang quo_text sym "!!"
 #' @importFrom zapieR s3_accessibility_layer
+#' @importFrom DBI dbRemoveTable
 #'
 #' @examples \dontrun{
 #' temp_table <- uuid::UUIDgenerate()
@@ -54,10 +55,13 @@ Parquetr <- R6Class(
       types <- identify_spark_types(df)
       names(types) <- names(df)
       df_spark <- spark_read_csv(sc = self$sc, name = temp_loc, path = self$s3a_url(paste0("csv/", temp_loc)), columns = types, infer_schema = FALSE)
-      self$delete_csv(temp_loc)
       spark_write_parquet(df_spark, self$s3a_url(location), mode = mode, ...)
-      rm(df_spark)
-      sparklyr::tbl_uncache(self$sc, temp_loc)
+
+      # Clean-up
+      sparklyr::tbl_uncache(self$sc, temp_loc) # uncache the table
+      dbRemoveTable(self$sc, temp_loc) # remove temp table made for spark_read_csv from the database (might be on disk otherwise)
+      rm(df_spark) # clear representation, just in case going out of scope isn't good enough
+      self$delete_csv(temp_loc) #delete the temp record we made on S3
     },
     write_parquet_partition = function(df, location, partition) {
       unique_entries_for_partition <- df %>%

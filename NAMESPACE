@@ -2,6 +2,7 @@
 
 export(Parquetr)
 export(identify_spark_types)
+importFrom(DBI,dbRemoveTable)
 importFrom(R6,R6Class)
 importFrom(dplyr,coalesce)
 importFrom(dplyr,collect)
