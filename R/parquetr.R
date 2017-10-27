@@ -5,7 +5,7 @@
 #' @importFrom glue glue
 #' @importFrom sparklyr spark_install_find spark_config spark_write_parquet spark_read_parquet spark_connect spark_read_csv
 #' @importFrom magrittr "%>%"
-#' @importFrom dplyr collect first pull
+#' @importFrom dplyr collect first pull select
 #' @importFrom purrr map
 #' @importFrom uuid UUIDgenerate
 #' @importFrom readr write_csv
