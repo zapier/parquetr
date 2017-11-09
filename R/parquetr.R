@@ -13,6 +13,10 @@
 #' @importFrom zapieR s3_accessibility_layer
 #' @importFrom DBI dbRemoveTable
 #'
+#' @docType class
+#' @keywords data
+#' @return Object of \code{\link{R6Class}} with methods for reading/writing Parquet on S3.
+#' @format \code{\link{R6Class}} object.
 #' @examples \dontrun{
 #' temp_table <- uuid::UUIDgenerate()
 #' local_spark <- sparkConnection$new()
@@ -20,6 +24,15 @@
 #' local_spark$read_parquet(temp_table)
 #' local_spark$delete_parquet(temp_table)
 #' }
+#' @field bucket A R6S3 function that generates a target bucket
+#' @field df A data.frame to process
+#' @field location \code{character} Of the location relative to the bucket root (allowing for the root prefix of spark-storage) to interact with
+#' @section Methods:
+#' \describe{
+#'   \item{\code{new(bucket)}}{This method is used to create object of this class with \code{bucket} as the target bucket.}
+#'   \item{\code{write_parquet(df, location, mode = "overwrite", ...)}}{This method is used to create object of this class with \code{bucket} as the target bucket.}
+#' }
+
 Parquetr <- R6Class(
   "Parquetr",
   public = list(
