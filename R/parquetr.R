@@ -36,17 +36,19 @@ Parquetr <- R6Class(
         test_connection_fun = test_connection_s3,
         build_connection_fun =
           function() s3_accessibility_layer$new(
-            bucket = bucket()$bucket,
-            key_prefix = glue("{bucket()$key_prefix}spark-storage/")
-          )
+              bucket = bucket()$bucket,
+              key_prefix = glue("{bucket()$key_prefix}spark-storage/")
+            )
       )()
     },
-    write_parquet = function(df, location, mode = 'overwrite', ...) {
+    write_parquet = function(df, location, mode = "overwrite", ...) {
       # @param location character ; just the name not the s3 addy
       # current issue with columns that have newlines in presence of date column
       # https://github.com/rstudio/sparklyr/issues/1020
       character_columns <- which(lapply(df, class) == "character")
-      df[, character_columns] <- lapply(df[, character_columns], function(x) {gsub("\n", "", x)})
+      df[, character_columns] <- lapply(df[, character_columns], function(x) {
+        gsub("\n", "", x)
+      })
       # Date doesn't serialize correctly, other timestamp bits seem affected as well: https://github.com/rstudio/sparklyr/issues/941
       # datetime_columns <- which(lapply(df, function(x) {first(class(x))}) %in% c("Date", "POSIXct", "POSIXlt"))
       # df[, datetime_columns] <- lapply(df[, character_columns], function(x) {as.character(x)})
@@ -61,20 +63,20 @@ Parquetr <- R6Class(
       sparklyr::tbl_uncache(self$sc, temp_loc) # uncache the table
       dbRemoveTable(self$sc, temp_loc) # remove temp table made for spark_read_csv from the database (might be on disk otherwise)
       rm(df_spark) # clear representation, just in case going out of scope isn't good enough
-      self$delete_csv(temp_loc) #delete the temp record we made on S3
+      self$delete_csv(temp_loc) # delete the temp record we made on S3
     },
     write_parquet_partition = function(df, location, partition) {
       unique_entries_for_partition <- df %>%
-        select(!!partition) %>%
-        pull(!!partition) %>%
-        unique
+        select(!! partition) %>%
+        pull(!! partition) %>%
+        unique()
       self$write_parquet(df, self$partition_location(location, partition, unique_entries_for_partition), mode = "overwrite")
     },
     read_parquet = function(name, ...) {
       spark_read_parquet(self$sc, private$spark_name(name), self$s3a_url(name), ...) %>% collect(n = Inf)
     },
     read_csv = function(name, columns = NULL, ...) {
-      #TODO: A read that immediately follows a write could set infer_schema to false to speed reading back into Spark
+      # TODO: A read that immediately follows a write could set infer_schema to false to speed reading back into Spark
       name <- as.character(glue("csv/{name}"))
       spark_read_csv(sc = self$sc, name = private$spark_name(name), self$s3a_url(name), null_value = "", columns = columns, ...) %>% collect(n = Inf)
     },

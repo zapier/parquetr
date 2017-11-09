@@ -1,1 +1,1 @@
-.package_env <- new.env(parent=emptyenv())
+.package_env <- new.env(parent = emptyenv())
