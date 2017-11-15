@@ -70,10 +70,13 @@ Parquetr <- R6Class(
       self$write_csv(df, temp_loc)
       types <- identify_spark_types(df)
       names(types) <- names(df)
+      log_if_verbose("Reading csv into Spark from ", self$s3a_url(paste0("csv/", temp_loc)))
       df_spark <- spark_read_csv(sc = self$sc, name = temp_loc, path = self$s3a_url(paste0("csv/", temp_loc)), columns = types, infer_schema = FALSE)
+      log_if_verbose("Writing Parquet from Spark to S3 ", self$s3a_url(location))
       spark_write_parquet(df_spark, self$s3a_url(location), mode = mode, ...)
 
       # Clean-up
+      log_if_verbose("Cleaning up from write_parquet()")
       sparklyr::tbl_uncache(self$sc, temp_loc) # uncache the table
       dbRemoveTable(self$sc, temp_loc) # remove temp table made for spark_read_csv from the database (might be on disk otherwise)
       rm(df_spark) # clear representation, just in case going out of scope isn't good enough
