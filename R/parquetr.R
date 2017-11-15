@@ -55,6 +55,7 @@ Parquetr <- R6Class(
       )()
     },
     write_parquet = function(df, location, mode = "overwrite", ...) {
+      log_if_verbose("Writing parquet to ", location)
       # @param location character ; just the name not the s3 addy
       # current issue with columns that have newlines in presence of date column
       # https://github.com/rstudio/sparklyr/issues/1020
@@ -100,7 +101,9 @@ Parquetr <- R6Class(
     write_csv = function(d, location) {
       location <- glue("csv/{location}")
       temp_file <- tempfile()
+      log_if_verbose("Writing local disk csv to ", temp_file)
       write_csv(x = d, path = temp_file, na = "")
+      log_if_verbose("Uploading local disk csv to s3 ", location)
       private$bucket$set_file(location, temp_file)
       unlink(temp_file)
     },
