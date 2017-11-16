@@ -11,6 +11,7 @@ Imports:
     dplyr,
     glue,
     magrittr,
+    methods,
     sparklyr (>= 0.7.0-9034),
     purrr,
     uuid,
