@@ -3,7 +3,7 @@
 #' @export
 #' @importFrom R6 R6Class
 #' @importFrom glue glue
-#' @importFrom sparklyr spark_install_find spark_config spark_write_parquet spark_read_parquet spark_connect spark_read_csv
+#' @importFrom sparklyr spark_install_find spark_config spark_write_parquet spark_read_parquet spark_connect spark_read_csv connection_is_open
 #' @importFrom magrittr "%>%"
 #' @importFrom dplyr collect first pull select
 #' @importFrom purrr map
@@ -36,14 +36,17 @@
 Parquetr <- R6Class(
   "Parquetr",
   public = list(
-    initialize = function(bucket) {
+    initialize = function(bucket, config = NULL) {
       Sys.setenv(SPARK_HOME = sparklyr:::spark_install_find()$sparkVersionDir)
-      config <- sparklyr::spark_config()
-      config$`sparklyr.shell.driver-memory` <- "4G"
-      config$`sparklyr.shell.executor-memory` <- "4G"
-      config$`spark.yarn.executor.memoryOverhead` <- "1G"
-      config[["sparklyr.defaultPackages"]] <- "org.apache.hadoop:hadoop-aws:2.7.3"
-      private$spark_connection <- sparklyr::spark_connect(master = "local", config = config)
+      if (is.null(config)) {
+        config <- sparklyr::spark_config()
+        config$`sparklyr.shell.driver-memory` <- paste0(trunc(systemRAMFree()-1), "G")
+        #config$`sparklyr.shell.executor-memory` <- "4G"
+        #config$`spark.yarn.executor.memoryOverhead` <- "1G"
+        config[["sparklyr.defaultPackages"]] <- "org.apache.hadoop:hadoop-aws:2.7.3"
+      }
+      private$config <- config
+      private$spark_connection <- private$connect()
       private$bucket <- generic_connection(
         connection_name = UUIDgenerate(),
         test_connection_fun = test_connection_s3,
@@ -134,11 +137,21 @@ Parquetr <- R6Class(
   ),
   active = list(
     sc = function() {
-      private$spark_connection
+      if (!is.null(private$sc) && spark_connection_is_open(private$sc)) {
+        private$spark_connection
+      } else {
+        warning("Spark context lost, creating a new context")
+        private$spark_connection <- private$connect()
+      }
+
     }
   ),
   private = list(
     spark_connection = NULL,
+    config = NULL,
+    connect = function() {
+      sparklyr::spark_connect(master = "local", config = private$config)
+    },
     bucket = NULL,
     spark_name = function(name) {
       name %>%
@@ -153,3 +166,8 @@ Parquetr <- R6Class(
     }
   )
 )
+
+systemRAMFree <- function() {
+  #in GB, platform dependent
+  as.numeric(system('FREE_KB=$(($(echo `sed -n \'2p;3p;4p\' <  /proc/meminfo | sed "s/ \\+/ /g" | cut -d\' \' -f 2 ` | sed "s/ /+/g")));echo $FREE_KB', intern=TRUE))/1024/1024
+}
