@@ -36,7 +36,7 @@
 Parquetr <- R6Class(
   "Parquetr",
   public = list(
-    initialize = function(bucket, config = NULL) {
+    initialize = function(bucket, master = "local", config = NULL) {
       Sys.setenv(SPARK_HOME = sparklyr:::spark_install_find()$sparkVersionDir)
       if (is.null(config)) {
         config <- sparklyr::spark_config()
@@ -45,6 +45,7 @@ Parquetr <- R6Class(
         #config$`spark.yarn.executor.memoryOverhead` <- "1G"
         config[["sparklyr.defaultPackages"]] <- "org.apache.hadoop:hadoop-aws:2.7.3"
       }
+      private$master <- master
       private$config <- config
       private$spark_connection <- private$connect()
       private$bucket <- generic_connection(
@@ -149,8 +150,9 @@ Parquetr <- R6Class(
   private = list(
     spark_connection = NULL,
     config = NULL,
+    master = NULL,
     connect = function() {
-      sparklyr::spark_connect(master = "local", config = private$config)
+      sparklyr::spark_connect(master = private$master, config = private$config)
     },
     bucket = NULL,
     spark_name = function(name) {
