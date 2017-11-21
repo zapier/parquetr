@@ -13,8 +13,8 @@ generic_connection <- function(connection_name, build_connection_fun, test_conne
     if (identical(try(test_connection_fun(get(connection_name, .package_env)), silent = TRUE), TRUE)) {
       connection_object <- get(connection_name, envir = .package_env)
     } else {
-        connection_object <- build_connection_fun()
-        assign(connection_name, connection_object, envir = .package_env)
+      connection_object <- build_connection_fun()
+      assign(connection_name, connection_object, envir = .package_env)
     }
     return(connection_object)
   }

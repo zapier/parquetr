@@ -7,9 +7,11 @@ Title: Easy methods for reading/writing Parquet files on S3
 Version: 0.0.1.0
 Depends: 
 Imports:
+    DBI,
     dplyr,
     glue,
     magrittr,
+    methods,
     sparklyr (>= 0.7.0-9034),
     purrr,
     uuid,
