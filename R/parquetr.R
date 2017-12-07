@@ -87,10 +87,7 @@ Parquetr <- R6Class(
       self$delete_csv(temp_loc) # delete the temp record we made on S3
     },
     write_parquet_partition = function(df, location, partition) {
-      unique_entries_for_partition <- df %>%
-        select(!! partition) %>%
-        pull(!! partition) %>%
-        unique()
+      unique_entries_for_partition <- private$get_partition_value(df, partition)
       self$write_parquet(df, self$partition_location(location, partition, unique_entries_for_partition), mode = "overwrite")
     },
     read_parquet = function(name, ...) {
@@ -151,6 +148,12 @@ Parquetr <- R6Class(
     spark_connection = NULL,
     config = NULL,
     master = NULL,
+    get_partition_value = function(df, partition) {
+      df %>%
+        select(!! partition) %>%
+        pull(!! partition) %>%
+        unique()
+    },
     connect = function() {
       sparklyr::spark_connect(master = private$master, config = private$config)
     },
