@@ -45,7 +45,7 @@ Parquetr <- R6Class(
         #config$`spark.yarn.executor.memoryOverhead` <- "1G"
         config[["sparklyr.defaultPackages"]] <- "org.apache.hadoop:hadoop-aws:2.7.3"
         if (file.exists("~/mysql-connector-java-5.1.45/mysql-connector-java-5.1.45-bin.jar")) {
-          config$sparklyr.jars.default <- c(config$sparklyr.jars.default, "/home/ubuntu/mysql-connector-java-5.1.45/mysql-connector-java-5.1.45-bin.jar")
+          config$sparklyr.jars.default <- c(config$sparklyr.jars.default, "~/mysql-connector-java-5.1.45/mysql-connector-java-5.1.45-bin.jar")
         }
       }
       private$master <- master
