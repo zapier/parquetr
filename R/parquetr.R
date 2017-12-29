@@ -36,7 +36,7 @@
 Parquetr <- R6Class(
   "Parquetr",
   public = list(
-    initialize = function(bucket, master = "local", config = NULL) {
+    initialize = function(bucket, master = "local", config = NULL, ...) {
       Sys.setenv(SPARK_HOME = sparklyr:::spark_install_find()$sparkVersionDir)
       if (is.null(config)) {
         config <- sparklyr::spark_config()
@@ -44,6 +44,9 @@ Parquetr <- R6Class(
         #config$`sparklyr.shell.executor-memory` <- "4G"
         #config$`spark.yarn.executor.memoryOverhead` <- "1G"
         config[["sparklyr.defaultPackages"]] <- "org.apache.hadoop:hadoop-aws:2.7.3"
+        if (file.exists("~/mysql-connector-java-5.1.45/mysql-connector-java-5.1.45-bin.jar")) {
+          config$sparklyr.jars.default <- c(config$sparklyr.jars.default, "~/mysql-connector-java-5.1.45/mysql-connector-java-5.1.45-bin.jar")
+        }
       }
       private$master <- master
       private$config <- config
