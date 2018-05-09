@@ -12,7 +12,7 @@ Imports:
     glue,
     magrittr,
     methods,
-    sparklyr (>= 0.7.0-9034),
+    sparklyr (>= 0.7.0-9016),
     purrr,
     uuid,
     R6,
