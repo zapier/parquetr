@@ -1,0 +1,33 @@
+# See templates in ./bin/build.R for artifact format
+
+# we don't use the shared baseline because that could establish a circular dependency
+# install from upstream packages as needed in ./bin/install.sh
+image: rstudio/r-session-complete:bionic-1.3.1056-1
+
+stages:
+  - test
+  - deploy
+
+before_script:
+  - chmod +x inst/install.sh
+
+test:
+  stage: test
+  image: rstudio/r-session-complete:bionic-1.3.1056-1
+  script:
+    - ./inst/install.sh
+    - R -e 'devtools::check()'
+
+build:
+  stage: deploy
+  image: rstudio/r-session-complete:bionic-1.3.1056-1
+  rules:
+# Our gitlab doesn't currently support these - so we always build
+#    - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME || $CI_COMMIT_TAG
+  script:
+    - ./inst/install.sh
+    - 'echo "CI_COMMIT_REF_NAME: $CI_COMMIT_REF_NAME"'
+    - 'echo "CI_MERGE_REQUEST_SOURCE_BRANCH_NAME: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME"'
+    - 'echo "CI_COMMIT_REF_NAME: $CI_COMMIT_REF_NAME"'
+    - aws s3 cp s3://zapier-data-packages/R_packages/rzapierci/master/rzapierci_latest.tar.gz /tmp/rzapierci.tar.gz. || echo 'Was not able to get {rzapierci} from S3'
+    - R --no-save < ./inst/build.R
