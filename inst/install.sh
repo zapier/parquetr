@@ -7,3 +7,6 @@ echo TZ=Etc/UTC >> ~/.Renviron # set time zone
 curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
 unzip awscli-bundle.zip
 ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
+
+# Add parquetr packages
+R -e "lapply(list('sparklyr','uuid'), function(x) {remotes::install_cran(x, upgrade = FALSE)})"
