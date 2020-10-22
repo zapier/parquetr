@@ -9,4 +9,4 @@ unzip awscli-bundle.zip
 ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
 
 # Add parquetr packages
-R -e "lapply(list('sparklyr','uuid'), function(x) {remotes::install_cran(x, upgrade = FALSE)})"
+R -e "lapply(list('sparklyr','uuid'), function(x) {remotes::install_cran(x, upgrade = FALSE, repos = Sys.getenv('CRAN_URL'))})"
